@@ -22,13 +22,13 @@ print("Transaction setup complete for: " + tx_sender_name)
 def pkt_check(pkt):
     print("Packet received, determining direction...")
 # check if packet is incoming or outgoing:
-	if pkt[Ether].src != Ether().src:
-	        print("packet inbound detected")
-		packet = incoming(pkt)
-	else:
-	  	print("packet outbound detected")
-		packet = outgoing(pkt)
-	return packet
+    if pkt[Ether].src != Ether().src:
+	print("packet inbound detected")
+	packet = incoming(pkt)
+    else:
+	print("packet outbound detected")
+	packet = outgoing(pkt)
+    return packet
 	
 def incoming(pkt):
     print("Packet recieved, inbound")
