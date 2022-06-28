@@ -135,4 +135,12 @@ def bgpchain_validate(segment, tx_sender_name="Remote AS"):
 
 if __name__=='__main__':
     print("Listening for packets...")
-    sniff(prn=pkt_check) # filter='bgp', iface='ens3'
+    #scapy.all.show_interfaces()
+    x=get_if_list()
+    print(x)
+    external=str(x[0])
+    internal=str(x[1])
+    print ("interface check"+str(external))
+    print ("interface 2 check" + str(internal))
+    #print(conf.iface)
+    sniff(iface=["net0","ix100"], prn=pkt_check) # filter='bgp', iface='ens3'
