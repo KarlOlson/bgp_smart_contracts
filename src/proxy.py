@@ -23,45 +23,48 @@ def pkt_check(pkt):
     print("Packet received, determining direction...")
 # check if packet is incoming or outgoing:
     if pkt[Ether].src != Ether().src:
-	print("packet inbound detected")
-	packet = incoming(pkt)
+        print("packet inbound detected")
+        packet = incoming(pkt)
     else:
-	print("packet outbound detected")
-	packet = outgoing(pkt)
+        print("packet outbound detected")
+        packet = outgoing(pkt)
     return packet
 	
 def incoming(pkt):
     print("Packet recieved, inbound")
     if (str(pkt.summary()).find('BGPHeader') > 0) and (pkt[BGPHeader].type == 2) : #dont actually need if filtering on BGP in or>
         print("BGP Update Header Detected")
-        if pkt[BGPUpdate].path_attr[1].attribute.segments[0].segment_length == 1:
-            print ("    Destination IP = " + pkt[IP].dst) #Remote AS
-            print ("    Source IP = " + pkt[IP].src) #Local AS
-            print ("    BGP Segment AS = " + str(pkt[BGPUpdate].path_attr[1].attribute.segments[1].segment_length))
-            print ("    BGP Segment Next Hop = " + str(pkt[BGPUpdate].path_attr[2].attribute.next_hop))
-            print ("    BGP Segment NLRI = " + str(pkt[BGPUpdate].nlri[0].prefix))
-            print ("End of BGP Update Packet")
-            count = 0
-            for i in pkt[BGPUpdate].nlri:
-                print ("NLRI check: " + str(pkt[BGPUpdate].nlri[count].prefix))
+	try:
+            if pkt[BGPUpdate].path_attr[1].attribute.segments[0].segment_length == 1:
+                print ("    Destination IP = " + pkt[IP].dst) #Remote AS
+                print ("    Source IP = " + pkt[IP].src) #Local AS
+                print ("    BGP Segment AS = " + str(pkt[BGPUpdate].path_attr[1].attribute.segments[1].segment_length))
+                print ("    BGP Segment Next Hop = " + str(pkt[BGPUpdate].path_attr[2].attribute.next_hop))
+                print ("    BGP Segment NLRI = " + str(pkt[BGPUpdate].nlri[0].prefix))
+                print ("End of BGP Update Packet")
+                count = 0
+                for i in pkt[BGPUpdate].nlri:
+                    print ("NLRI check: " + str(pkt[BGPUpdate].nlri[count].prefix))
             # chain mutable list = [AS, Network Prefix, CIDR]
-                adv_segment = [pkt[BGPUpdate].path_attr[1].attribute.segments[1].segment_length, str(pkt[BGPUpdate].nlri[count].prefix).split('/')[0], str(pkt[BGPUpdate].nlri[count].prefix).split('/')[1], "Internal"]
+                    adv_segment = [pkt[BGPUpdate].path_attr[1].attribute.segments[1].segment_length, str(pkt[BGPUpdate].nlri[count].prefix).split('/')[0], str(pkt[BGPUpdate].nlri[count].prefix).split('/')[1], "Internal"]
 
 #print ("try seg:" + str(adv_segment[1]))
             #call check on BGPchain to validate segment advertisement request
-                check=bgpchain_validate(adv_segment, tx_sender_name)
-                if check == 'Authorized':
-                   print("NLRI " + str(count) + " passed authorization...checking next ASN")
-                   count +=1
-                   pass
-                else:
-                   print ("AS " + str(pkt[BGPUpdate].path_attr[1].attribute.segments[1].segment_length) + " Failed Authorization, Sending Notification...")
-                   craft_negative_response_packet(pkt, interface='ens3')
-                   return False #Drops original packet without forwarding
-            print ("All Advertised ASN's have passed check")
-            return True
-        else:
-            return True
+                    check=bgpchain_validate(adv_segment, tx_sender_name)
+                    if check == 'Authorized':
+                       print("NLRI " + str(count) + " passed authorization...checking next ASN")
+                       count +=1
+                       pass
+                    else:
+                       print ("AS " + str(pkt[BGPUpdate].path_attr[1].attribute.segments[1].segment_length) + " Failed Authorization, Sending Notification...")
+                       craft_negative_response_packet(pkt, interface='ens3')
+                       return False #Drops original packet without forwarding
+                print ("All Advertised ASN's have passed check")
+                return True
+            else:
+                return True
+	except:
+           print("Update was to announce ASN dropped. No check performed.")
     else:
          return True
 				
@@ -69,34 +72,37 @@ def outgoing(pkt):
     print("Packet recieved, outbound")
     if (str(pkt.summary()).find('BGPHeader') > 0) and (pkt[BGPHeader].type == 2) : #dont actually need if filtering on BGP in or>
         print("BGP Update Header Detected")
-        if pkt[BGPUpdate].path_attr[1].attribute.segments[0].segment_length == 1:
-            print ("    Destination IP = " + pkt[IP].dst) #Remote AS
-            print ("    Source IP = " + pkt[IP].src) #Local AS
-            print ("    BGP Segment AS = " + str(pkt[BGPUpdate].path_attr[1].attribute.segments[1].segment_length))
-            print ("    BGP Segment Next Hop = " + str(pkt[BGPUpdate].path_attr[2].attribute.next_hop))
-            print ("    BGP Segment NLRI = " + str(pkt[BGPUpdate].nlri[0].prefix))
-            print ("End of BGP Update Packet")
-            count = 0
-            for i in pkt[BGPUpdate].nlri:
-                print ("NLRI check: " + str(pkt[BGPUpdate].nlri[count].prefix))
+	try:
+            if pkt[BGPUpdate].path_attr[1].attribute.segments[0].segment_length == 1:
+                print ("    Destination IP = " + pkt[IP].dst) #Remote AS
+                print ("    Source IP = " + pkt[IP].src) #Local AS
+                print ("    BGP Segment AS = " + str(pkt[BGPUpdate].path_attr[1].attribute.segments[1].segment_length))
+                print ("    BGP Segment Next Hop = " + str(pkt[BGPUpdate].path_attr[2].attribute.next_hop))
+                print ("    BGP Segment NLRI = " + str(pkt[BGPUpdate].nlri[0].prefix))
+                print ("End of BGP Update Packet")
+                count = 0
+                for i in pkt[BGPUpdate].nlri:
+                    print ("NLRI check: " + str(pkt[BGPUpdate].nlri[count].prefix))
             # chain mutable list = [AS, Network Prefix, CIDR]
-                adv_segment = [pkt[BGPUpdate].path_attr[1].attribute.segments[1].segment_length, str(pkt[BGPUpdate].nlri[count].prefix).split('/')[0], str(pkt[BGPUpdate].nlri[count].prefix).split('/')[1], "Internal"]
+                    adv_segment = [pkt[BGPUpdate].path_attr[1].attribute.segments[1].segment_length, str(pkt[BGPUpdate].nlri[count].prefix).split('/')[0], str(pkt[BGPUpdate].nlri[count].prefix).split('/')[1], "Internal"]
 
             #print ("try seg:" + str(adv_segment[1]))
             #call check on BGPchain to validate segment advertisement request
-                check=bgpchain_validate(adv_segment, tx_sender_name)
-                if check == 'Authorized':
-                   print("NLRI " + str(count) + " passed authorization...checking next ASN")
-                   count +=1
-                   pass
-                else:
-                   print ("AS " + str(pkt[BGPUpdate].path_attr[1].attribute.segments[1].segment_length) + " Failed Authorization, Sending Notification...")
-                   craft_negative_response_packet(pkt, interface='ens3')
-                   return False #Drops original packet without forwarding
-            print ("All Advertised ASN's have passed check")
-            return True
-        else:
-            return True
+                    check=bgpchain_validate(adv_segment, tx_sender_name)
+                    if check == 'Authorized':
+                       print("NLRI " + str(count) + " passed authorization...checking next ASN")
+                       count +=1
+                       pass
+                    else:
+                       print ("AS " + str(pkt[BGPUpdate].path_attr[1].attribute.segments[1].segment_length) + " Failed Authorization, Sending Notification...")
+                       craft_negative_response_packet(pkt, interface='ens3')
+                       return False #Drops original packet without forwarding
+                print ("All Advertised ASN's have passed check")
+                return True
+            else:
+                return True
+	except:
+           print("Update was to announce ASN dropped. No check performed.")
     else:
          return True
                 
